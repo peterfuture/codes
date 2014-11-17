@@ -5,6 +5,8 @@ namespace po = boost::program_options;
 
 #include "codec_test.hpp"
 
+using namespace std;
+
 //global variables def
 static int proto_enable = 0;
 
@@ -39,6 +41,7 @@ int main(int argc, char **argv)
 {
 	program_options_usage(argc, argv);
 	
+	std::cout<< "enable proto test:"<< proto_enable << std::endl;
 	if(proto_enable == 1)
 	{
 		proto_test();
