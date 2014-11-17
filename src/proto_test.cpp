@@ -6,28 +6,46 @@
 #include <person.pb.h>
 
 using namespace std;
+using namespace proto;
 
 static int proto_write()
 {
-	Person person;
-	person.set_name("John Doe");
-	person.set_id(1234);
-	person.set_email("jdoe@example.com");
+	person p;
+	p.set_name("John Doe");
+	p.set_id(1234);
+	p.set_email("jdoe@example.com");
+	
+	person_phone_number *phone;
+	phone = p.add_phone();
+	phone->set_number("13911111111");
+	phone->set_type(proto::person_phone_type_MOBILE);
+
+	phone = p.add_phone();
+	phone->set_number("0211111111");
+	phone->set_type(proto::person_phone_type_HOME);
+	
 
 	fstream output("myfile", ios::out | ios::binary);
-	person.SerializeToOstream(&output);
+	p.SerializeToOstream(&output);
 
 	return 0;
 }
 
 static int proto_read()
 {
-	Person person;
+	person p;
 	fstream input("myfile", ios::in | ios::binary);
-	person.ParseFromIstream(&input);
-	cout << "Name: " << person.name() << endl;
-	cout << "E-mail: " << person.email() << endl;
+	p.ParseFromIstream(&input);
+	cout << "Name: " << p.name() << endl;
+	cout << "E-mail: " << p.email() << endl;
 	
+	int size = p.phone_size();
+	for(int i = 0; i < size; i++)
+	{
+		person_phone_number phone = p.phone(i);
+		cout<< "type:" << phone.type()<< " number:" << phone.number() << std::endl;
+	}
+
 	return 0;
 }
 
