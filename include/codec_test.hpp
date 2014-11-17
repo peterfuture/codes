@@ -1,0 +1,1 @@
+int proto_test();
