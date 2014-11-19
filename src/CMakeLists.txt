@@ -5,6 +5,10 @@ if(PROTO_ENABLE)
 list(APPEND SRC  proto_test.cpp)
 endif()
 
+if(SOCI_ENABLE)
+list(APPEND SRC  soci_test.cpp)
+endif()
+
 add_executable(code_test ${SRC})
 
 if(PROTO_ENABLE)
