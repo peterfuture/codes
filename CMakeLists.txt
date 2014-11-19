@@ -5,14 +5,15 @@ project(codes)
 ##############################################
 #  OPTION
 ##############################################
-option(PROTO_ENABLE "enable proto test" ON)
+option(PROTO_ENABLE "enable proto test" OFF)
 option(SOCI_ENABLE "soci-postgresql test" OFF)
+option(OPENSSL_ENABLE "openssl test" ON)
 
 ##############################################
 #  ENV
 ##############################################
 
-find_package(Boost 1.54 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.54 COMPONENTS program_options filesystem system REQUIRED)
 
 ####proto
 if(PROTO_ENABLE)
@@ -37,13 +38,21 @@ include_directories(${PostgreSQL_INCLUDE_DIRS})
 find_path( SOCI_INCLUDE_DIRS connection-pool.h PATHS /usr/include/soci /usr/local/include/soci /opt/soci/include/soci)
 include_directories(${SOCI_INCLUDE_DIRS})
 link_libraries(${SOCI_LIBRARY} ${SOCI_PG_LIBRARY} ${PostgreSQL_LIBRARIES})
-
 add_definitions(-DENABLE_SOCI_TEST)
+endif()
+
+#### OPENSSL
+if(OPENSSL_ENABLE)
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+link_libraries(${OPENSSL_LIBRARIES})
+add_definitions(-DENABLE_OPENSSL_TEST)
 endif()
 
 #local include
 include_directories(include)
 #boost include
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 include_directories(${Boost_INCLUDE_DIRS})
 link_libraries(${Boost_LIBRARIES})
 
