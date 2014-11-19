@@ -17,7 +17,7 @@ int program_options_usage(int argc, char **argv)
 	desc.add_options()
 	("help,h", "produce help message")
 	("version,v", "print version string")
-	("proto_enable", po::value<int>(&proto_enable)->default_value(0), "enable proto test")
+	("proto_test", po::value<int>(&proto_enable)->default_value(0), "exec proto test")
 	;
 	
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -44,7 +44,9 @@ int main(int argc, char **argv)
 	std::cout<< "enable proto test:"<< proto_enable << std::endl;
 	if(proto_enable == 1)
 	{
+		#ifdef ENABLE_PROTO_TEST
 		proto_test();
+		#endif
 	}
 	
     return 0;

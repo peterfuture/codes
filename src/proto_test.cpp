@@ -3,9 +3,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <person.pb.h>
-
 using namespace std;
+
+#include <person.pb.h>
 using namespace proto;
 
 static int proto_write()
@@ -52,9 +52,7 @@ static int proto_read()
 int proto_test()
 {
 	std::cout<< "Enter protobuf test case" << std::endl;
-
 	proto_write();
 	proto_read();
-	
 	return 0;
 }
