@@ -8,13 +8,6 @@ project(codes)
 option(PROTO_ENABLE "enable proto test" ON)
 option(SOCI_ENABLE "soci-postgresql test" OFF)
 
-
-IF(DEBUG)
-	message(STATUS "To build debug version")
-    add_definitions(-DDEBUG)
-ENDIF()
-
-
 ##############################################
 #  ENV
 ##############################################
