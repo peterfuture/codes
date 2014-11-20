@@ -148,19 +148,18 @@ int ca_load()
 	boost::shared_ptr<BIO> shared_keyfile(BIO_new_mem_buf(&keyfilecontent[0], keyfilecontent.length()), BIO_free);
 	boost::shared_ptr<BIO> shared_certfile(BIO_new_mem_buf(&certfilecontent[0], certfilecontent.length()), BIO_free);
 
-	boost::shared_ptr<RSA> rsa_key2(
+	boost::shared_ptr<RSA> rsa_key_tmp(
 		PEM_read_bio_RSAPrivateKey(shared_keyfile.get(), 0, (pem_password_cb*)pass_cb,(void*) key.c_str()),
 		RSA_free
 	);
-	shared_keyfile.reset(BIO_new(BIO_s_mem()), BIO_free);
+	//shared_keyfile.reset(BIO_new(BIO_s_mem()), BIO_free);
 
-	rsa_key.reset(PEM_read_bio_RSAPrivateKey(shared_keyfile.get(), 0, 0, 0), RSA_free);
+	rsa_key = rsa_key_tmp;
 	x509_cert.reset(PEM_read_bio_X509(shared_certfile.get(), 0, 0, 0), X509_free);
 
-	std::cout << "private_key:" << keyfilecontent << " cert_content:" << certfilecontent;
-	std::cout << "load key cert ok." << std::endl;
-	
+	//std::cout << "private_key:" << keyfilecontent << " cert_content:" << certfilecontent;
 	dump_ca_info();
+	std::cout << "load key cert ok." << std::endl;
 }
 
 std::string RSA_private_encrypt(RSA * rsa, const std::string & from)
@@ -188,14 +187,42 @@ std::string RSA_private_encrypt(RSA * rsa, const std::string & from)
 	return result;
 }
 
+std::string RSA_public_encrypt(RSA * rsa, const std::string & from)
+{
+	std::string result;
+	const int keysize = RSA_size(rsa);
+	std::vector<unsigned char> block(keysize);
+	const int chunksize = keysize  - RSA_PKCS1_PADDING_SIZE;
+	int inputlen = from.length();
+
+	for(int i = 0 ; i < inputlen; i+= chunksize)
+	{
+		auto resultsize = RSA_public_encrypt(std::min(chunksize, inputlen - i), (uint8_t*) &from[i],  &block[0], (RSA*) rsa, RSA_PKCS1_PADDING);
+		result.append((char*)block.data(), resultsize);
+	}
+	return result;
+}
+
+std::string RSA_private_decrypt(RSA * rsa, const std::string & from)
+{
+	std::string result;
+	const int keysize = RSA_size(rsa);
+	std::vector<unsigned char> block(keysize);
+
+	for(int i = 0 ; i < from.length(); i+= keysize)
+	{
+		auto resultsize = RSA_private_decrypt(std::min<int>(keysize, from.length() - i), (uint8_t*) &from[i],  &block[0], rsa, RSA_PKCS1_PADDING);
+		result.append((char*)block.data(), resultsize);
+	}
+	return result;
+}
+
 std::string RSA_public_decrypt(RSA * rsa, const std::string & from)
 {
 	std::string result;
 	const int keysize = RSA_size(rsa);
 	std::vector<unsigned char> block(keysize);
-	std::cout << "start" << std::endl;
 	int inputlen = from.length();
-	std::cout << "start" << std::endl;
 	for(int i = 0 ; i < from.length(); i+= keysize)
 	{
 		int flen = std::min(keysize, inputlen - i);
@@ -207,7 +234,6 @@ std::string RSA_public_decrypt(RSA * rsa, const std::string & from)
 			rsa,
 			RSA_PKCS1_PADDING
 		);
-		std::cout << "ok" << std::endl;
 		result.append((char*)block.data(), resultsize);
 	}
 	return result;
@@ -215,19 +241,26 @@ std::string RSA_public_decrypt(RSA * rsa, const std::string & from)
 
 int ca_process()
 {	
+	auto key_tmp = X509_get_pubkey(x509_cert.get());
+	auto user_rsa_pubkey = EVP_PKEY_get1_RSA(key_tmp);
+	EVP_PKEY_free(key_tmp);
+	
+	
 	std::string rawdata("codecs test for openssl");
 	std::cout << "rawdata:" << rawdata<< std::endl;
 	std::string encrypt_data = RSA_private_encrypt(rsa_key.get(), rawdata);
-	std::cout << "after private_key encrypt_data:" << encrypt_data << std::endl;
-	
-	auto env_key = X509_get_pubkey(x509_cert.get());
-	auto user_rsa_pubkey = EVP_PKEY_get1_RSA(env_key);
-	EVP_PKEY_free(env_key);
+	//std::cout << "after private_key encrypt_data:" << encrypt_data << std::endl;
 
 	std::string decrypt_data = RSA_public_decrypt(user_rsa_pubkey, encrypt_data);
 	RSA_free(user_rsa_pubkey);
 	std::cout << "after pubkey decrypt_data:" << decrypt_data << std::endl;
 	
+	//encrypt by pubkey - decrypt by private_key
+	encrypt_data.clear();
+	decrypt_data.clear();
+	encrypt_data += (RSA_public_encrypt(user_rsa_pubkey, rawdata));
+	decrypt_data += (RSA_private_decrypt(rsa_key.get(), encrypt_data));
+	std::cout << "after private_key decrypt_data:" << decrypt_data << std::endl;
 	return 0;
 }
 
