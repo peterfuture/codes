@@ -22,7 +22,6 @@ std::vector<uint8_t> server_shared_key;
 //== CA
 boost::shared_ptr<RSA> rsa_key;
 boost::shared_ptr<X509> x509_cert;
-std::string keyfilecontent, certfilecontent;
 
 //step1 Client Generate HD P-G-PUBKEY
 int dh_generate_clientkey()
@@ -136,6 +135,7 @@ int ca_load()
 {
 	fs::path key("./test.key");
 	fs::path cert("./test.crt");
+	std::string keyfilecontent, certfilecontent;
 	
 	std::ifstream keyfile(key.string().c_str(), std::ios_base::binary | std::ios_base::in);
 	std::ifstream certfile(cert.string().c_str(), std::ios_base::binary | std::ios_base::in);
@@ -250,9 +250,7 @@ int ca_process()
 	std::cout << "rawdata:" << rawdata<< std::endl;
 	std::string encrypt_data = RSA_private_encrypt(rsa_key.get(), rawdata);
 	//std::cout << "after private_key encrypt_data:" << encrypt_data << std::endl;
-
 	std::string decrypt_data = RSA_public_decrypt(user_rsa_pubkey, encrypt_data);
-	RSA_free(user_rsa_pubkey);
 	std::cout << "after pubkey decrypt_data:" << decrypt_data << std::endl;
 	
 	//encrypt by pubkey - decrypt by private_key
@@ -275,7 +273,7 @@ int openssl_test()
 {	
 	OpenSSL_add_all_algorithms();
 	ca_test();
-	//dh_test();
+	dh_test();
 	
 	std::cout<< "openssl test end" << std::endl;
 	return 0;
